@@ -115,6 +115,7 @@ class NeuralNetwork:
         print(f"\n\nTime: {time.time() - start:.2f}s")
     
     def predict(self, X):
+        self.results = []
         for i in range(len(X)):
             self.forward_propagation(X[i])
             self.results.append(self.activations[-1])
