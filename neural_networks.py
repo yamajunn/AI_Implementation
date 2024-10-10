@@ -110,20 +110,23 @@ class NeuralNetwork:
             print("\033[3A")  # Move the cursor up 3 lines
         print(f"\n\nTime: {time.time() - start:.2f}s")
 
-layer_sizes = [2, 8, 16, 8, 1]  # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
+layer_sizes = [2, 8, 16, 8, 2]  # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
 
 # DataSet for XOR
 X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
-y = [[0], [1], [1], [0]]  # Output
+y = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Output
 
 epochs = 1000  # Number of epochs
 learning_rate = 0.01  # Learning rate
 
 nn = NeuralNetwork(layer_sizes)
 nn.train(X, y, epochs, learning_rate)
-
+accuracy = 0
 for i in range(len(X)):  # Prediction
     nn.forward_propagation(X[i])
     output = nn.activations[-1]
     binary_output = [1 if o >= 0.5 else 0 for o in output]
-    print(f"Inputs: {X[i]}, Output: {y[i]}, Predict: {binary_output}, probability: {round(output[0], 5)}")
+    print(f"Inputs: {X[i]}, Output: {y[i]},  Predict: {binary_output}, probability: {[round(o, 3) for o in output]}")
+
+    accuracy += sum([1 if y[i][j] == binary_output[j] else 0 for j in range(len(y[i]))]) / len(y[i])
+print(f"Accuracy: {accuracy/len(y) * 100:.2f}%")
