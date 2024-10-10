@@ -5,6 +5,7 @@ class NeuralNetwork:
         self.layer_sizes = layer_sizes
         self.napier_number = self.napiers_logarithm(1000000000)  # e
         self.weights, self.biases = self.initialize_weights()
+        self.activations = []
 
     def napiers_logarithm(self, x):  # e = (1 + 1/x)^x
         return (1 + 1 / x) ** x
@@ -22,14 +23,27 @@ class NeuralNetwork:
         return 1 if x > 0 else 0
 
     def ln(self, x, n_terms=10000):  # ln(x) = x - x^2/2 + x^3/3 - x^4/4 + ...
-        if x <= 0: raise ValueError("Input must be greater than 0.")
-        x -= 1
-        return sum([((-1)**(n+1))*(x**n)/n for n in range(1, n_terms + 1)])
+        if x <= 0:
+            raise ValueError("x must be positive")  # 自然対数は正の数に対して定義されている
+        elif x == 1:
+            return 0  # ln(1) = 0
+        
+        # テイラー展開は |x - 1| < 1 の範囲でしか有効でないため、xが1より大きい場合は対数の性質を使う
+        if x < 2:
+            # xが1に近い場合に使用できるテイラー展開 (Maclaurin 展開)
+            z = x - 1
+            result = 0
+            for n in range(1, n_terms + 1):
+                term = ((-1) ** (n + 1)) * (z ** n) / n
+                result += term
+            return result
+        else:
+            # ln(x) = ln(x / 2) + ln(2) の性質を利用して分割
+            return self.ln(x / 2, n_terms) + self.ln(2, n_terms)
 
     def cross_entropy_loss(self, y_true, y_pred):  # -sum(y_true[i] * ln(y_pred[i] + 1e-9))
         if len(y_true) != len(y_pred): raise ValueError("Input lists must have the same length.")
         return -sum([y_true[i] * self.ln(y_pred[i] + 1e-9) for i in range(len(y_true))])
-
 
     def initialize_weights(self):  # initialize weights and biases
         weights, biases = [], []
@@ -41,17 +55,16 @@ class NeuralNetwork:
         return weights, biases
 
     def forward_propagation(self, inputs):  # forward propagation
-        activations = [inputs]
+        self.activations = [inputs]
         for W, b in zip(self.weights, self.biases):
             z = [
-                sum([activations[-1][i] * W[j][i] for i in range(len(activations[-1]))]) + b[j]
+                sum([self.activations[-1][i] * W[j][i] for i in range(len(self.activations[-1]))]) + b[j]
                 for j in range(len(b))
             ]
-            activations.append([self.relu(z_i) for z_i in z])
-        return activations
+            self.activations.append([self.relu(z_i) for z_i in z])
 
-    def backward_propagation(self, activations, y_true, learning_rate):  # backward propagation
-        output_layer = activations[-1]
+    def backward_propagation(self, y_true, learning_rate):  # backward propagation
+        output_layer = self.activations[-1]
         errors = [
             (output_layer[i] - y_true[i]) * self.sigmoid_derivative(output_layer[i])
             for i in range(len(y_true))
@@ -60,29 +73,29 @@ class NeuralNetwork:
         # Backpropagating the hidden layer error
         for l in range(len(self.weights)-1, 0, -1):
             hidden_errors = [
-                sum([deltas[0][k] * self.weights[l][k][j] for k in range(len(deltas[0]))]) * self.relu_derivative(activations[l][j])
-                for j in range(len(activations[l]))
+                sum([deltas[0][k] * self.weights[l][k][j] for k in range(len(deltas[0]))]) * self.relu_derivative(self.activations[l][j])
+                for j in range(len(self.activations[l]))
             ]
             deltas.insert(0, hidden_errors)
         # Update the weights and biases
         for l in range(len(self.weights)):
             for i in range(len(self.weights[l])):
                 for j in range(len(self.weights[l][i])):
-                    self.weights[l][i][j] -= learning_rate * deltas[l][i] * activations[l][j]
+                    self.weights[l][i][j] -= learning_rate * deltas[l][i] * self.activations[l][j]
                 self.biases[l][i] -= learning_rate * deltas[l][i]
 
     def train(self, X, y, epochs, learning_rate):
         for epoch in range(epochs):
             total_loss = 0
             for i in range(len(X)):
-                activations = self.forward_propagation(X[i])
-                total_loss += self.cross_entropy_loss(y[i], activations[-1])
-                self.backward_propagation(activations, y[i], learning_rate)
+                self.forward_propagation(X[i])
+                total_loss += self.cross_entropy_loss(y[i], self.activations[-1])
+                self.backward_propagation(y[i], learning_rate)
             
-            m = (epoch + (epochs // 20) - 1) // (epochs // 20)
+            bar_count = (epoch + (epochs // 20) - 1) // (epochs // 20)
             print(f"Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(X)}")
-            print(f"[{'+'*m}{' '*(20-m)}]")
-            print("\033[3A")
+            print(f"[{'+'*bar_count}{' '*(20-bar_count)}]")  # Progress bar
+            print("\033[3A")  # Move the cursor up 3 lines
         print("\n\nComplete")
 
 layer_sizes = [2, 8, 16, 8, 1]  # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
@@ -91,14 +104,14 @@ layer_sizes = [2, 8, 16, 8, 1]  # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -
 X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
 y = [[0], [1], [1], [0]]  # Output
 
-epochs = 1000  # Number of epochs
+epochs = 500  # Number of epochs
 learning_rate = 0.01  # Learning rate
 
 nn = NeuralNetwork(layer_sizes)
 nn.train(X, y, epochs, learning_rate)
 
 for i in range(len(X)):  # Prediction
-    activations = nn.forward_propagation(X[i])
-    output = activations[-1]
+    nn.forward_propagation(X[i])
+    output = nn.activations[-1]
     binary_output = [1 if o >= 0.5 else 0 for o in output]
     print(f"Inputs: {X[i]}, Output: {y[i]}, Predict: {binary_output}, probability: {round(output[0], 5)}")
