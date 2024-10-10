@@ -2,12 +2,14 @@ import random
 import time
 
 class NeuralNetwork:
-    def __init__(self, hidden_size=[8, 16, 8], learning_rate=0.01):
+    def __init__(self, hidden_size=[8, 16, 8], epochs=1000, learning_rate=0.01):
         self.layer_sizes = hidden_size
+        self.learning_rate = learning_rate
+        self.epochs = epochs
         self.napier_number = self.napiers_logarithm(1000000000)  # e
         self.weights, self.biases = [], []
         self.activations = []
-        self.learning_rate = learning_rate
+        self.results = []
 
     def napiers_logarithm(self, x):  # e = (1 + 1/x)^x
         return (1 + 1 / x) ** x
@@ -72,7 +74,6 @@ class NeuralNetwork:
         ]
         self.activations.append([self.sigmoid(z_i) for z_i in z])  # Sigmoid activation function
 
-
     def backward_propagation(self, y_true):  # backward propagation
         output_layer = self.activations[-1]
         errors = [
@@ -94,40 +95,48 @@ class NeuralNetwork:
                     self.weights[l][i][j] -= self.learning_rate * deltas[l][i] * self.activations[l][j]
                 self.biases[l][i] -= self.learning_rate * deltas[l][i]
 
-    def train(self, X, y, epochs=500):
+    def train(self, X, y):
         self.layer_sizes.insert(0, len(X[0]))  # Add the input layer size
         self.layer_sizes.append(len(y[0]))  # Add the output layer size
         self.weights, self.biases = self.initialize_weights()
+        self.y_true = y
         start = time.time()
-        for epoch in range(epochs):
+        for epoch in range(self.epochs):
             total_loss = 0
             for i in range(len(X)):
                 self.forward_propagation(X[i])  # Forward propagation
                 total_loss += self.cross_entropy_loss(y[i], self.activations[-1])  # Calculate the total loss
                 self.backward_propagation(y[i])  # Backward propagation
             
-            bar_count = (epoch + (epochs // 20) - 1) // (epochs // 20)
-            print(f"Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(X)}")
+            bar_count = (epoch + (self.epochs // 20) - 1) // (self.epochs // 20)
+            print(f"Epoch {epoch+1}/{self.epochs}, Loss: {total_loss/len(X)}")
             print(f"[{'+'*bar_count}{' '*(20-bar_count)}]")  # Progress bar
             print("\033[3A")  # Move the cursor up 3 lines
         print(f"\n\nTime: {time.time() - start:.2f}s")
+    
+    def predict(self, X, threshold=-1):
+        for i in range(len(X)):
+            self.forward_propagation(X[i])
+            self.results.append(self.activations[-1])
+        return self.results
+    
+    def accuracy(self):
+        accuracy = 0
+        for i in range(len(self.y_true)):
+            binary_output = [1 if self.results[i][j] >= 0.5 else 0 for j in range(len(self.y_true[i]))]
+            accuracy += sum([1 if self.y_true[i][j] == binary_output[j] else 0 for j in range(len(self.y_true[i]))]) / len(self.y_true[i])
+        return accuracy / len(self.y_true) * 100
 
 # DataSet for XOR
 X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
-y = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Output
-
-epochs = 1000  # Number of epochs
+y = [[0, 0], [0, 1], [1, 0], [1, 0.5]]  # Output
 
 # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
-nn = NeuralNetwork(hidden_size=[8, 16, 8], learning_rate = 0.01)  # Create a neural network
-nn.train(X, y, epochs)  # Train the neural network
+nn = NeuralNetwork(hidden_size=[8, 16, 8], epochs=1000, learning_rate = 0.01)  # Create a neural network
+nn.train(X, y)  # Train the neural network
 
 accuracy = 0
-for i in range(len(X)):  # Prediction
-    nn.forward_propagation(X[i])
-    output = nn.activations[-1]
-    binary_output = [1 if o >= 0.5 else 0 for o in output]
-    print(f"Inputs: {X[i]}, Output: {y[i]},  Predict: {binary_output}, probability: {[round(o, 3) for o in output]}")
-
-    accuracy += sum([1 if y[i][j] == binary_output[j] else 0 for j in range(len(y[i]))]) / len(y[i])
-print(f"Accuracy: {accuracy/len(y) * 100:.2f}%")
+output = nn.predict(X, threshold=0.5)
+for i in range(len(X)):
+    print(f"Input: {X[i]}, Output: {output[i]}")
+print(f"Accuracy: {nn.accuracy():.2f}%")
