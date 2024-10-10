@@ -35,12 +35,25 @@ def initialize_weights(layer_sizes):  # initialize weights and biases
         biases.append(b)
     return weights, biases
 
+
 def forward_propagation(inputs, weights, biases):
     activations = [inputs]
     for W, b in zip(weights, biases):
         z = [sum([activations[-1][i] * W[j][i] for i in range(len(activations[-1]))]) + b[j] for j in range(len(b))]
         activations.append([relu(z_i) for z_i in z])
     return activations
+
+# DataSet for XOR
+X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
+y = [[0], [1], [1], [0]]  # Output
+
+layer_sizes = [2, 3, 3, 1]  # 2_input -> 3_hidden -> 3_hidden -> 1_output
+
+weights, biases = initialize_weights(layer_sizes)
+activations = forward_propagation(X[0], weights, biases)
+print(activations)
+# print(weights)
+# print(biases)
 
 '''     2   3   3   1  <- layer_sizes
         #   #   #
