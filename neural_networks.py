@@ -22,24 +22,25 @@ class NeuralNetwork:
     def relu_derivative(self, x):  # f'(x) = 1 if x > 0 else 0
         return 1 if x > 0 else 0
 
-    def ln(self, x, n_terms=10000):  # ln(x) = x - x^2/2 + x^3/3 - x^4/4 + ...
+    def ln(self, x, n_terms=100):
         if x <= 0:
-            raise ValueError("x must be positive")  # 自然対数は正の数に対して定義されている
+            raise ValueError("x must be positive")
         elif x == 1:
             return 0  # ln(1) = 0
         
-        # テイラー展開は |x - 1| < 1 の範囲でしか有効でないため、xが1より大きい場合は対数の性質を使う
-        if x < 2:
-            # xが1に近い場合に使用できるテイラー展開 (Maclaurin 展開)
-            z = x - 1
-            result = 0
-            for n in range(1, n_terms + 1):
-                term = ((-1) ** (n + 1)) * (z ** n) / n
-                result += term
-            return result
-        else:
-            # ln(x) = ln(x / 2) + ln(2) の性質を利用して分割
-            return self.ln(x / 2, n_terms) + self.ln(2, n_terms)
+        result, factor = 0, 0
+        while x > 2:
+            x /= 2
+            factor += 1
+
+        # teilor expansion
+        z = x - 1
+        for n in range(1, n_terms + 1):
+            term = ((-1) ** (n + 1)) * (z ** n) / n
+            result += term
+
+        return result + factor * 0.69314718056  # ln(2) = 0.69314718056
+
 
     def cross_entropy_loss(self, y_true, y_pred):  # -sum(y_true[i] * ln(y_pred[i] + 1e-9))
         if len(y_true) != len(y_pred): raise ValueError("Input lists must have the same length.")
