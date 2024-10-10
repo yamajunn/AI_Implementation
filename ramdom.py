@@ -1,7 +1,6 @@
 import time
 
-a = 1587123
-c = 2390751
-m = 2**32
+m = 10**16
 
-print((a * int(time.time() * 1000) + c) % m / m)
+t = time.time()
+print(t-int(t))
