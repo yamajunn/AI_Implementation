@@ -2,12 +2,12 @@ import random
 import time
 
 class NeuralNetwork:
-    def __init__(self, layer_sizes):
-        self.layer_sizes = layer_sizes
+    def __init__(self, hidden_size=[8, 16, 8], learning_rate=0.01):
+        self.layer_sizes = hidden_size
         self.napier_number = self.napiers_logarithm(1000000000)  # e
-        self.weights, self.biases = self.initialize_weights()
+        self.weights, self.biases = [], []
         self.activations = []
-        self.learning_rate = 0.01
+        self.learning_rate = learning_rate
 
     def napiers_logarithm(self, x):  # e = (1 + 1/x)^x
         return (1 + 1 / x) ** x
@@ -94,8 +94,10 @@ class NeuralNetwork:
                     self.weights[l][i][j] -= self.learning_rate * deltas[l][i] * self.activations[l][j]
                 self.biases[l][i] -= self.learning_rate * deltas[l][i]
 
-    def train(self, X, y, epochs=500, learning_rate=0.01):
-        self.learning_rate = learning_rate
+    def train(self, X, y, epochs=500):
+        self.layer_sizes.insert(0, len(X[0]))  # Add the input layer size
+        self.layer_sizes.append(len(y[0]))  # Add the output layer size
+        self.weights, self.biases = self.initialize_weights()
         start = time.time()
         for epoch in range(epochs):
             total_loss = 0
@@ -110,17 +112,16 @@ class NeuralNetwork:
             print("\033[3A")  # Move the cursor up 3 lines
         print(f"\n\nTime: {time.time() - start:.2f}s")
 
-layer_sizes = [2, 8, 16, 8, 2]  # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
-
 # DataSet for XOR
 X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
 y = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Output
 
 epochs = 1000  # Number of epochs
-learning_rate = 0.01  # Learning rate
 
-nn = NeuralNetwork(layer_sizes)
-nn.train(X, y, epochs, learning_rate)
+# 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
+nn = NeuralNetwork(hidden_size=[8, 16, 8], learning_rate = 0.01)  # Create a neural network
+nn.train(X, y, epochs)  # Train the neural network
+
 accuracy = 0
 for i in range(len(X)):  # Prediction
     nn.forward_propagation(X[i])
