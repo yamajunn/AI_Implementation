@@ -4,6 +4,7 @@ class NeuralNetwork:
     def __init__(self, layer_sizes):
         self.layer_sizes = layer_sizes
         self.napier_number = self.napiers_logarithm(1000000000)  # e
+        self.weights, self.biases = self.initialize_weights()
 
     def napiers_logarithm(self, x):  # e = (1 + 1/x)^x
         return (1 + 1 / x) ** x
@@ -39,9 +40,9 @@ class NeuralNetwork:
             biases.append(b)
         return weights, biases
 
-    def forward_propagation(self, inputs, weights, biases):  # forward propagation
+    def forward_propagation(self, inputs):  # forward propagation
         activations = [inputs]
-        for W, b in zip(weights, biases):
+        for W, b in zip(self.weights, self.biases):
             z = [
                 sum([activations[-1][i] * W[j][i] for i in range(len(activations[-1]))]) + b[j]
                 for j in range(len(b))
@@ -49,7 +50,7 @@ class NeuralNetwork:
             activations.append([self.relu(z_i) for z_i in z])
         return activations
 
-    def backward_propagation(self, activations, y_true, weights, biases, learning_rate):  # backward propagation
+    def backward_propagation(self, activations, y_true, learning_rate):  # backward propagation
         output_layer = activations[-1]
         errors = [
             (output_layer[i] - y_true[i]) * self.sigmoid_derivative(output_layer[i])
@@ -57,54 +58,47 @@ class NeuralNetwork:
         ]
         deltas = [errors]
         # Backpropagating the hidden layer error
-        for l in range(len(weights)-1, 0, -1):
+        for l in range(len(self.weights)-1, 0, -1):
             hidden_errors = [
-                sum([deltas[0][k] * weights[l][k][j] for k in range(len(deltas[0]))]) * self.relu_derivative(activations[l][j])
+                sum([deltas[0][k] * self.weights[l][k][j] for k in range(len(deltas[0]))]) * self.relu_derivative(activations[l][j])
                 for j in range(len(activations[l]))
             ]
             deltas.insert(0, hidden_errors)
         # Update the weights and biases
-        for l in range(len(weights)):
-            for i in range(len(weights[l])):
-                for j in range(len(weights[l][i])):
-                    weights[l][i][j] -= learning_rate * deltas[l][i] * activations[l][j]
-                biases[l][i] -= learning_rate * deltas[l][i]
-
-        return weights, biases
+        for l in range(len(self.weights)):
+            for i in range(len(self.weights[l])):
+                for j in range(len(self.weights[l][i])):
+                    self.weights[l][i][j] -= learning_rate * deltas[l][i] * activations[l][j]
+                self.biases[l][i] -= learning_rate * deltas[l][i]
 
     def train(self, X, y, epochs, learning_rate):
-        weights, biases = self.initialize_weights()
-
         for epoch in range(epochs):
             total_loss = 0
             for i in range(len(X)):
-                activations = self.forward_propagation(X[i], weights, biases)
+                activations = self.forward_propagation(X[i])
                 total_loss += self.cross_entropy_loss(y[i], activations[-1])
-                weights, biases = self.backward_propagation(activations, y[i], weights, biases, learning_rate)
+                self.backward_propagation(activations, y[i], learning_rate)
             
             m = (epoch + (epochs // 20) - 1) // (epochs // 20)
             print(f"Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(X)}")
             print(f"[{'+'*m}{' '*(20-m)}]")
             print("\033[3A")
         print("\n\nComplete")
-        return weights, biases
-
 
 layer_sizes = [2, 8, 16, 8, 1]  # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
 
 # DataSet for XOR
 X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
 y = [[0], [1], [1], [0]]  # Output
-epochs = 500  # Number of epochs
+
+epochs = 1000  # Number of epochs
 learning_rate = 0.01  # Learning rate
 
-
 nn = NeuralNetwork(layer_sizes)
-
-weights, biases = nn.train(X, y, epochs, learning_rate)
+nn.train(X, y, epochs, learning_rate)
 
 for i in range(len(X)):  # Prediction
-    activations = nn.forward_propagation(X[i], weights, biases)
+    activations = nn.forward_propagation(X[i])
     output = activations[-1]
     binary_output = [1 if o >= 0.5 else 0 for o in output]
-    print(f"Inputs: {X[i]}, Output: {y[i]} Predict: {binary_output}, probability: {round(output[0], 3)}")
+    print(f"Inputs: {X[i]}, Output: {y[i]}, Predict: {binary_output}, probability: {round(output[0], 5)}")
