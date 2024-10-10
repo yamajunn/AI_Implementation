@@ -1,4 +1,5 @@
 import random
+import time
 
 class NeuralNetwork:
     def __init__(self, layer_sizes):
@@ -6,6 +7,7 @@ class NeuralNetwork:
         self.napier_number = self.napiers_logarithm(1000000000)  # e
         self.weights, self.biases = self.initialize_weights()
         self.activations = []
+        self.learning_rate = 0.01
 
     def napiers_logarithm(self, x):  # e = (1 + 1/x)^x
         return (1 + 1 / x) ** x
@@ -14,7 +16,8 @@ class NeuralNetwork:
         return 1 / (1 + self.napier_number ** -x)
 
     def sigmoid_derivative(self, x):  # f'(x) = f(x) * (1 - f(x))
-        return self.sigmoid(x) * (1 - self.sigmoid(x))
+        sig = self.sigmoid(x)
+        return sig * (1 - sig)
 
     def relu(self, x):  # f(x) = max(0, x)
         return max(0, x)
@@ -23,22 +26,18 @@ class NeuralNetwork:
         return 1 if x > 0 else 0
 
     def ln(self, x, n_terms=100):
-        if x <= 0:
-            raise ValueError("x must be positive")
-        elif x == 1:
-            return 0  # ln(1) = 0
-        
+        if x <= 0: raise ValueError("x must be positive")
+        elif x == 1: return 0  # ln(1) = 0
+        # decompose into ln(x / 2^k)
         result, factor = 0, 0
         while x > 2:
             x /= 2
             factor += 1
-
         # teilor expansion
         z = x - 1
         for n in range(1, n_terms + 1):
             term = ((-1) ** (n + 1)) * (z ** n) / n
             result += term
-
         return result + factor * 0.69314718056  # ln(2) = 0.69314718056
 
 
@@ -56,15 +55,25 @@ class NeuralNetwork:
         return weights, biases
 
     def forward_propagation(self, inputs):  # forward propagation
+        # Hidden layers
         self.activations = [inputs]
-        for W, b in zip(self.weights, self.biases):
+        for W, b in zip(self.weights, self.biases[:-1]):
             z = [
                 sum([self.activations[-1][i] * W[j][i] for i in range(len(self.activations[-1]))]) + b[j]
                 for j in range(len(b))
             ]
             self.activations.append([self.relu(z_i) for z_i in z])
+        
+        # Output layer
+        W, b = self.weights[-1], self.biases[-1]
+        z = [
+            sum([self.activations[-1][i] * W[j][i] for i in range(len(self.activations[-1]))]) + b[j]
+            for j in range(len(b))
+        ]
+        self.activations.append([self.sigmoid(z_i) for z_i in z])  # Sigmoid activation function
 
-    def backward_propagation(self, y_true, learning_rate):  # backward propagation
+
+    def backward_propagation(self, y_true):  # backward propagation
         output_layer = self.activations[-1]
         errors = [
             (output_layer[i] - y_true[i]) * self.sigmoid_derivative(output_layer[i])
@@ -82,22 +91,24 @@ class NeuralNetwork:
         for l in range(len(self.weights)):
             for i in range(len(self.weights[l])):
                 for j in range(len(self.weights[l][i])):
-                    self.weights[l][i][j] -= learning_rate * deltas[l][i] * self.activations[l][j]
-                self.biases[l][i] -= learning_rate * deltas[l][i]
+                    self.weights[l][i][j] -= self.learning_rate * deltas[l][i] * self.activations[l][j]
+                self.biases[l][i] -= self.learning_rate * deltas[l][i]
 
-    def train(self, X, y, epochs, learning_rate):
+    def train(self, X, y, epochs=500, learning_rate=0.01):
+        self.learning_rate = learning_rate
+        start = time.time()
         for epoch in range(epochs):
             total_loss = 0
             for i in range(len(X)):
-                self.forward_propagation(X[i])
-                total_loss += self.cross_entropy_loss(y[i], self.activations[-1])
-                self.backward_propagation(y[i], learning_rate)
+                self.forward_propagation(X[i])  # Forward propagation
+                total_loss += self.cross_entropy_loss(y[i], self.activations[-1])  # Calculate the total loss
+                self.backward_propagation(y[i])  # Backward propagation
             
             bar_count = (epoch + (epochs // 20) - 1) // (epochs // 20)
             print(f"Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(X)}")
             print(f"[{'+'*bar_count}{' '*(20-bar_count)}]")  # Progress bar
             print("\033[3A")  # Move the cursor up 3 lines
-        print("\n\nComplete")
+        print(f"\n\nTime: {time.time() - start:.2f}s")
 
 layer_sizes = [2, 8, 16, 8, 1]  # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
 
@@ -105,7 +116,7 @@ layer_sizes = [2, 8, 16, 8, 1]  # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -
 X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
 y = [[0], [1], [1], [0]]  # Output
 
-epochs = 500  # Number of epochs
+epochs = 1000  # Number of epochs
 learning_rate = 0.01  # Learning rate
 
 nn = NeuralNetwork(layer_sizes)
