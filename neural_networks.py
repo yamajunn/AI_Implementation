@@ -114,29 +114,32 @@ class NeuralNetwork:
             print("\033[3A")  # Move the cursor up 3 lines
         print(f"\n\nTime: {time.time() - start:.2f}s")
     
-    def predict(self, X, threshold=-1):
+    def predict(self, X):
         for i in range(len(X)):
             self.forward_propagation(X[i])
             self.results.append(self.activations[-1])
         return self.results
     
-    def accuracy(self):
+    def accuracy(self, y_true):
         accuracy = 0
-        for i in range(len(self.y_true)):
-            binary_output = [1 if self.results[i][j] >= 0.5 else 0 for j in range(len(self.y_true[i]))]
-            accuracy += sum([1 if self.y_true[i][j] == binary_output[j] else 0 for j in range(len(self.y_true[i]))]) / len(self.y_true[i])
-        return accuracy / len(self.y_true) * 100
+        for i in range(len(y_true)):
+            binary_output = [1 if self.results[i][j] >= 0.5 else 0 for j in range(len(y_true[i]))]
+            accuracy += sum([1 if y_true[i][j] == binary_output[j] else 0 for j in range(len(y_true[i]))]) / len(y_true[i])
+        return accuracy / len(y_true) * 100
 
 # DataSet for XOR
 X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
-y = [[0, 0], [0, 1], [1, 0], [1, 0.5]]  # Output
+y = [[1], [0], [0], [1]]  # Output
+x_test = X
+y_test = y
 
 # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
 nn = NeuralNetwork(hidden_size=[8, 16, 8], epochs=1000, learning_rate = 0.01)  # Create a neural network
 nn.train(X, y)  # Train the neural network
 
 accuracy = 0
-output = nn.predict(X, threshold=0.5)
-for i in range(len(X)):
-    print(f"Input: {X[i]}, Output: {output[i]}")
-print(f"Accuracy: {nn.accuracy():.2f}%")
+output = nn.predict(x_test)
+for i in range(len(x_test)):
+    output[i] = [1 if output[i][j] >= 0.5 else 0 for j in range(len(output[i]))]
+    print(f"Input: {x_test[i]}, Output: {output[i]}")
+print(f"Accuracy: {nn.accuracy(y_test):.2f}%")
