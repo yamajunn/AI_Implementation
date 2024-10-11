@@ -1,0 +1,32 @@
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+
+# データセットのパスを指定
+train_path = '/Volumes/SSD/titanic/train.csv'
+test_path = '/Volumes/SSD/titanic/test.csv'
+# データセットを読み込む
+train = pd.read_csv(train_path)
+test = pd.read_csv(test_path)
+
+train = train.drop(columns=["Name", "PassengerId"])
+test = test.drop(columns=["Name", "PassengerId"])
+# ラベルエンコーダーを作成
+label_encoder = LabelEncoder()
+
+# PassengerId,Survived,Pclass,Name,Sex,Age,SibSp,Parch,Ticket,Fare,Cabin,Embarked
+# ラベルエンコードする列を指定
+columns_to_encode = ["Sex", "Ticket", "Cabin", "Embarked"]
+
+# 各列をラベルエンコード
+for column in columns_to_encode:
+    train[column] = label_encoder.fit_transform(train[column].astype(str))
+    test[column] = label_encoder.fit_transform(test[column].astype(str))
+
+# 欠損値を各列の平均値で補完
+train.fillna(train.mean(), inplace=True)
+test.fillna(test.mean(), inplace=True)
+
+from neural_networks import NeuralNetwork
+
+nn = NeuralNetwork(hidden_size=[8, 16, 32, 64, 32, 16, 8], epochs=1000, learning_rate=0.01)  # Create a neural network
+nn.train(train.drop(columns=["Survived"]).values.tolist(), [[y] for y in train["Survived"].values.tolist()])  # Train the neural network

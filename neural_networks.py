@@ -49,7 +49,6 @@ class NeuralNetwork:
             result += term
         return result + factor * 0.69314718056  # ln(2) = 0.69314718056
 
-
     def cross_entropy_loss(self, y_true, y_pred):  # -sum(y_true[i] * ln(y_pred[i] + 1e-9))
         if len(y_true) != len(y_pred): raise ValueError("Input lists must have the same length.")
         return -sum([y_true[i] * self.ln(y_pred[i] + 1e-9) for i in range(len(y_true))])
@@ -161,20 +160,20 @@ class NeuralNetwork:
         X = self.normalize_recursive(X)
         return X
 
-# DataSet for XOR
-X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
-y = [[0], [1], [1], [0]]  # Output
-x_test = [[0, 0], [0, 1], [1, 0], [1, 1]]
-y_test = [[0], [1], [1], [0]]
+# # DataSet for XOR
+# X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
+# y = [[0], [1], [1], [0]]  # Output
+# x_test = [[0, 0], [0, 1], [1, 0], [1, 1]]
+# y_test = [[0], [1], [1], [0]]
 
-# 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
-nn = NeuralNetwork(hidden_size=[4, 8, 16, 32, 64, 32, 16, 8, 4], epochs=1000, learning_rate = 0.01)  # Create a neural network
-nn.train(X, y)  # Train the neural network
+# # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
+# nn = NeuralNetwork(hidden_size=[4, 8, 16, 32, 64, 32, 16, 8, 4], epochs=1000, learning_rate = 0.01)  # Create a neural network
+# nn.train(X, y)  # Train the neural network
 
-accuracy = 0
-output = nn.predict(copy.deepcopy(x_test))  # Predict the output
-output_copy = copy.deepcopy(output)
-for i in range(len(x_test)):
-    output_copy[i] = [1 if output[i][j] >= 0.5 else 0 for j in range(len(output[i]))]
-    print(f"Input: {x_test[i]}, Output: {output_copy[i]}, Probability: {output[i]}")
-print(f"Accuracy: {nn.accuracy(y_test):.2f}%")
+# accuracy = 0
+# output = nn.predict(copy.deepcopy(x_test))  # Predict the output
+# output_copy = copy.deepcopy(output)
+# for i in range(len(x_test)):
+#     output_copy[i] = [1 if output[i][j] >= 0.5 else 0 for j in range(len(output[i]))]
+#     print(f"Input: {x_test[i]}, Output: {output_copy[i]}, Probability: {output[i]}")
+# print(f"Accuracy: {nn.accuracy(y_test):.2f}%")
