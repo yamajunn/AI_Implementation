@@ -16,8 +16,13 @@ class NeuralNetwork:
     def napiers_logarithm(self, x):  # e = (1 + 1/x)^x
         return (1 + 1 / x) ** x
 
-    def sigmoid(self, x):  # f(x) = 1 / (1 + e^-x)
-        return 1 / (1 + self.napier_number ** -x)
+    def sigmoid(self, x):
+        if x > 0:
+            return 1 / (1 + self.napier_number ** -x)
+        else:
+            # Avoid overflow
+            exp_neg_x = self.napier_number ** x
+            return exp_neg_x / (1 + exp_neg_x)
 
     def sigmoid_derivative(self, x):  # f'(x) = f(x) * (1 - f(x))
         sig = self.sigmoid(x)
@@ -28,7 +33,6 @@ class NeuralNetwork:
 
     def leaky_relu_derivative(self, x, alpha=0.01):  # f'(x) = 1 if x > 0 else alpha
         return 1 if x > 0 else alpha
-
 
     def ln(self, x, n_terms=100):
         if x <= 0: raise ValueError("x must be positive")
@@ -158,18 +162,19 @@ class NeuralNetwork:
         return X
 
 # DataSet for XOR
-X = [[0, 0], [0, 1], [1, 0], [1, 3]]  # Input
+X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
 y = [[0], [1], [1], [0]]  # Output
-x_test = [[0, 0], [0, 1], [1, 0], [1, 3]]
+x_test = [[0, 0], [0, 1], [1, 0], [1, 1]]
 y_test = [[0], [1], [1], [0]]
 
 # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
-nn = NeuralNetwork(hidden_size=[8, 16, 8], epochs=1000, learning_rate = 0.1)  # Create a neural network
+nn = NeuralNetwork(hidden_size=[4, 8, 16, 32, 64, 32, 16, 8, 4], epochs=1000, learning_rate = 0.01)  # Create a neural network
 nn.train(X, y)  # Train the neural network
 
 accuracy = 0
 output = nn.predict(copy.deepcopy(x_test))  # Predict the output
+output_copy = copy.deepcopy(output)
 for i in range(len(x_test)):
-    output[i] = [1 if output[i][j] >= 0.5 else 0 for j in range(len(output[i]))]
-    print(f"Input: {x_test[i]}, Output: {output[i]}")
+    output_copy[i] = [1 if output[i][j] >= 0.5 else 0 for j in range(len(output[i]))]
+    print(f"Input: {x_test[i]}, Output: {output_copy[i]}, Probability: {output[i]}")
 print(f"Accuracy: {nn.accuracy(y_test):.2f}%")
