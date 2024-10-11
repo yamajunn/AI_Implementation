@@ -11,6 +11,7 @@ class NeuralNetwork:
         self.weights, self.biases = [], []
         self.activations = []
         self.results = []
+        self.max_val, self.min_val = 0, 0
 
     def napiers_logarithm(self, x):  # e = (1 + 1/x)^x
         return (1 + 1 / x) ** x
@@ -101,6 +102,8 @@ class NeuralNetwork:
         self.layer_sizes.append(len(y[0]))  # Add the output layer size
         self.weights, self.biases = self.initialize_weights()
         self.y_true = y
+        X = self.normalize(X)
+        print(X)
         start = time.time()
         for epoch in range(self.epochs):
             total_loss = 0
@@ -117,6 +120,7 @@ class NeuralNetwork:
     
     def predict(self, X):
         self.results = []
+        X = self.normalize(X)
         for i in range(len(X)):
             self.forward_propagation(X[i])
             self.results.append(self.activations[-1])
@@ -148,26 +152,24 @@ class NeuralNetwork:
 
         X_sum = copy.deepcopy(X)
         flat_X = flatten(X_sum)
-        max_val = max(flat_X)
-        min_val = min(flat_X)
-        normalize_recursive(X, min_val, max_val)
+        self.max_val = max(flat_X)
+        self.min_val = min(flat_X)
+        normalize_recursive(X, self.min_val, self.max_val)
         return X
 
 # DataSet for XOR
 X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
 y = [[0], [1], [1], [0]]  # Output
-x_test = X
-y_test = y
+x_test = copy.deepcopy(X)
+y_test = copy.deepcopy(y)
 
 # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
 nn = NeuralNetwork(hidden_size=[8, 16, 8], epochs=1000, learning_rate = 0.01)  # Create a neural network
 nn.train(X, y)  # Train the neural network
 
 accuracy = 0
-output = nn.predict(x_test)
+output = nn.predict(copy.deepcopy(x_test))  # Predict the output
 for i in range(len(x_test)):
     output[i] = [1 if output[i][j] >= 0.5 else 0 for j in range(len(output[i]))]
     print(f"Input: {x_test[i]}, Output: {output[i]}")
 print(f"Accuracy: {nn.accuracy(y_test):.2f}%")
-
-print(nn.normalize(X))  # Normalize the input
