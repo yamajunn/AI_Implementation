@@ -1,5 +1,6 @@
 import random
 import time
+import copy
 
 class NeuralNetwork:
     def __init__(self, hidden_size=[8, 16, 8], epochs=1000, learning_rate=0.01):
@@ -127,10 +128,34 @@ class NeuralNetwork:
             binary_output = [1 if self.results[i][j] >= 0.5 else 0 for j in range(len(y_true[i]))]
             accuracy += sum([1 if y_true[i][j] == binary_output[j] else 0 for j in range(len(y_true[i]))]) / len(y_true[i])
         return accuracy / len(y_true) * 100
+    
+    def normalize(self, X):
+        def flatten(lst):
+            flat_list = []
+            for item in lst:
+                if isinstance(item, list):
+                    flat_list.extend(flatten(item))
+                else:
+                    flat_list.append(item)
+            return flat_list
+
+        def normalize_recursive(lst, min_val, max_val):
+            for i in range(len(lst)):
+                if isinstance(lst[i], list):
+                    normalize_recursive(lst[i], min_val, max_val)
+                else:
+                    lst[i] = 2 * (lst[i] - min_val) / (max_val - min_val) - 1
+
+        X_sum = copy.deepcopy(X)
+        flat_X = flatten(X_sum)
+        max_val = max(flat_X)
+        min_val = min(flat_X)
+        normalize_recursive(X, min_val, max_val)
+        return X
 
 # DataSet for XOR
 X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
-y = [[1], [0], [0], [1]]  # Output
+y = [[0], [1], [1], [0]]  # Output
 x_test = X
 y_test = y
 
@@ -144,3 +169,5 @@ for i in range(len(x_test)):
     output[i] = [1 if output[i][j] >= 0.5 else 0 for j in range(len(output[i]))]
     print(f"Input: {x_test[i]}, Output: {output[i]}")
 print(f"Accuracy: {nn.accuracy(y_test):.2f}%")
+
+print(nn.normalize(X))  # Normalize the input
