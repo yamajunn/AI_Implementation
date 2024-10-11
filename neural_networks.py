@@ -103,7 +103,6 @@ class NeuralNetwork:
         self.weights, self.biases = self.initialize_weights()
         self.y_true = y
         X = self.normalize(X)
-        print(X)
         start = time.time()
         for epoch in range(self.epochs):
             total_loss = 0
@@ -121,7 +120,6 @@ class NeuralNetwork:
     def predict(self, X):
         self.results = []
         X = self.normalize_recursive(X)
-        print(X)
         for i in range(len(X)):
             self.forward_propagation(X[i])
             self.results.append(self.activations[-1])
@@ -161,11 +159,11 @@ class NeuralNetwork:
 # DataSet for XOR
 X = [[0, 0], [0, 1], [1, 0], [1, 3]]  # Input
 y = [[0], [1], [1], [0]]  # Output
-x_test = [[0, 1]]
-y_test = [[1]]
+x_test = [[0, 0], [0, 1], [1, 0], [1, 3]]
+y_test = [[0], [1], [1], [0]]
 
 # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
-nn = NeuralNetwork(hidden_size=[8, 16, 8], epochs=1000, learning_rate = 0.01)  # Create a neural network
+nn = NeuralNetwork(hidden_size=[8, 16, 8], epochs=1000, learning_rate = 0.1)  # Create a neural network
 nn.train(X, y)  # Train the neural network
 
 accuracy = 0
