@@ -23,11 +23,12 @@ class NeuralNetwork:
         sig = self.sigmoid(x)
         return sig * (1 - sig)
 
-    def relu(self, x):  # f(x) = max(0, x)
-        return max(0, x)
+    def leaky_relu(self, x, alpha=0.01):  # f(x) = x if x > 0 else alpha * x
+        return x if x > 0 else alpha * x
 
-    def relu_derivative(self, x):  # f'(x) = 1 if x > 0 else 0
-        return 1 if x > 0 else 0
+    def leaky_relu_derivative(self, x, alpha=0.01):  # f'(x) = 1 if x > 0 else alpha
+        return 1 if x > 0 else alpha
+
 
     def ln(self, x, n_terms=100):
         if x <= 0: raise ValueError("x must be positive")
@@ -66,7 +67,7 @@ class NeuralNetwork:
                 sum([self.activations[-1][i] * W[j][i] for i in range(len(self.activations[-1]))]) + b[j]
                 for j in range(len(b))
             ]
-            self.activations.append([self.relu(z_i) for z_i in z])
+            self.activations.append([self.leaky_relu(z_i) for z_i in z])
         
         # Output layer
         W, b = self.weights[-1], self.biases[-1]
@@ -86,7 +87,7 @@ class NeuralNetwork:
         # Backpropagating the hidden layer error
         for l in range(len(self.weights)-1, 0, -1):
             hidden_errors = [
-                sum([deltas[0][k] * self.weights[l][k][j] for k in range(len(deltas[0]))]) * self.relu_derivative(self.activations[l][j])
+                sum([deltas[0][k] * self.weights[l][k][j] for k in range(len(deltas[0]))]) * self.leaky_relu_derivative(self.activations[l][j])
                 for j in range(len(self.activations[l]))
             ]
             deltas.insert(0, hidden_errors)
