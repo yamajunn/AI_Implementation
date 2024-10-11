@@ -120,7 +120,8 @@ class NeuralNetwork:
     
     def predict(self, X):
         self.results = []
-        X = self.normalize(X)
+        X = self.normalize_recursive(X)
+        print(X)
         for i in range(len(X)):
             self.forward_propagation(X[i])
             self.results.append(self.activations[-1])
@@ -133,6 +134,13 @@ class NeuralNetwork:
             accuracy += sum([1 if y_true[i][j] == binary_output[j] else 0 for j in range(len(y_true[i]))]) / len(y_true[i])
         return accuracy / len(y_true) * 100
     
+    def normalize_recursive(self, lst):
+        for i in range(len(lst)):
+            if isinstance(lst[i], list):
+                self.normalize_recursive(lst[i])
+            else:
+                lst[i] = 2 * (lst[i] - self.min_val) / (self.max_val - self.min_val) - 1
+        return lst
     def normalize(self, X):
         def flatten(lst):
             flat_list = []
@@ -143,25 +151,18 @@ class NeuralNetwork:
                     flat_list.append(item)
             return flat_list
 
-        def normalize_recursive(lst, min_val, max_val):
-            for i in range(len(lst)):
-                if isinstance(lst[i], list):
-                    normalize_recursive(lst[i], min_val, max_val)
-                else:
-                    lst[i] = 2 * (lst[i] - min_val) / (max_val - min_val) - 1
-
         X_sum = copy.deepcopy(X)
         flat_X = flatten(X_sum)
         self.max_val = max(flat_X)
         self.min_val = min(flat_X)
-        normalize_recursive(X, self.min_val, self.max_val)
+        X = self.normalize_recursive(X)
         return X
 
 # DataSet for XOR
-X = [[0, 0], [0, 1], [1, 0], [1, 1]]  # Input
+X = [[0, 0], [0, 1], [1, 0], [1, 3]]  # Input
 y = [[0], [1], [1], [0]]  # Output
-x_test = copy.deepcopy(X)
-y_test = copy.deepcopy(y)
+x_test = [[0, 1]]
+y_test = [[1]]
 
 # 2 input -> 8 hidden -> 16 hidden -> 8 hidden -> 1 output
 nn = NeuralNetwork(hidden_size=[8, 16, 8], epochs=1000, learning_rate = 0.01)  # Create a neural network
