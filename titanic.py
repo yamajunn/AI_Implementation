@@ -27,9 +27,25 @@ train.fillna(train.mean(), inplace=True)
 test.fillna(test.mean(), inplace=True)
 
 from neural_networks import NeuralNetwork
+from sklearn.neural_network import MLPClassifier
 
-nn = NeuralNetwork(hidden_size=[8, 16, 32, 64, 32, 16, 8], epochs=30, learning_rate=0.01)  # Create a neural network
-nn.train(train.drop(columns=["Survived"]).values.tolist(), [[y] for y in train["Survived"].values.tolist()])  # Train the neural network
+# nn = NeuralNetwork(hidden_size=[8, 16, 32, 64, 32, 16, 8], epochs=30, learning_rate=0.01)  # Create a neural network
+# nn.train(train.drop(columns=["Survived"]).values.tolist(), [[y] for y in train["Survived"].values.tolist()])  # Train the neural network
 
-output = nn.predict(test.values.tolist())  # Predict the output
-print(output)
+# output = nn.predict(test.values.tolist())  # Predict the output
+# print(output)
+
+# 特徴量とターゲットを分ける
+X_train = train.drop(columns=["Survived"])
+y_train = train["Survived"]
+
+# MLPClassifierのインスタンスを作成
+mlp = MLPClassifier(hidden_layer_sizes=(8, 16, 32, 64, 32, 16, 8), max_iter=30, learning_rate_init=0.01)
+
+# モデルを訓練
+mlp.fit(X_train, y_train)
+
+# テストデータで予測
+predictions = mlp.predict(test)
+
+print(predictions)
