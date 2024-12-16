@@ -1,5 +1,6 @@
 import random
 import time
+import os
 
 class Nn:
     def __init__(self, hidden_func="relu", output_func="sigmoid", loss_func="cross_entropy_loss", epochs=1000, learning_rate=0.01, random_state=None, layer_sizes=None):
@@ -334,8 +335,15 @@ class Nn:
                     self.weights[l][i][j] -= self.learning_rate * deltas[l][i] * self.activations[l][j]
                 self.biases[l][i] -= self.learning_rate * deltas[l][i]
     
-    def weight_view(self):
-        print(f"\r{self.weights[1][0]}", end="")
+    def weight_view(self, X):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        for i, layer in enumerate(self.weights):
+            print(f"Layer {i+1} weights:")
+            for neuron_weights in layer:
+                print(neuron_weights)
+            print(f"Inputs: {self.activations[-2]}")
+            print(f"Outputs: {self.activations[-1]}")
+            print()
         time.sleep(0.1)
         
     def fit(self, X, y):  # 学習
@@ -358,7 +366,7 @@ class Nn:
             total_loss = 0
             for i in range(len(X)):
                 self.forward_propagation(X[i])
-                self.weight_view()
+                self.weight_view(X[i])
                 total_loss += self.loss_func(y[i], self.activations[-1])
                 self.backward_propagation(y[i])
 
